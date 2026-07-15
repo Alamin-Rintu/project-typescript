@@ -14,7 +14,7 @@ const publicLinks = [
 ];
 
 const privateLinks = [
-  { label: "Host a Stay", href: "/add" },
+  { label: "Add Listing", href: "/addListing" },
   { label: "Dashboard", href: "/dashboard" },
 ];
 
