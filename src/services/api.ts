@@ -105,6 +105,35 @@ class ApiService {
   async getStats(): Promise<{ totalItems: number; totalCategories: number }> {
     return this.request("/items/stats");
   }
+
+  // Booking endpoints
+  async createBooking(data: {
+    propertyId: string;
+    propertyTitle: string;
+    propertyImage?: string;
+    propertyLocation?: string;
+    checkIn: string;
+    checkOut: string;
+    guests: number;
+    totalPrice: number;
+  }): Promise<{ message: string; bookingId: string }> {
+    return this.request("/bookings", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyBookings(): Promise<{ bookings: import("@/types").Booking[] }> {
+    return this.request("/bookings/my-bookings");
+  }
+
+  async getBookingStats(): Promise<{
+    totalBookings: number;
+    confirmedBookings: number;
+    totalRevenue: number;
+  }> {
+    return this.request("/bookings/stats");
+  }
 }
 
 export const api = new ApiService(API_BASE);

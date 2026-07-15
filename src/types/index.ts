@@ -65,6 +65,23 @@ export interface DashboardStats {
   totalViews: number;
 }
 
+export interface Booking {
+  _id: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyImage: string;
+  propertyLocation: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  checkIn: string;
+  checkOut: string;
+  guests: number;
+  totalPrice: number;
+  status: "confirmed" | "pending" | "cancelled";
+  createdAt: string;
+}
+
 export interface FilterParams {
   search?: string;
   category?: string;

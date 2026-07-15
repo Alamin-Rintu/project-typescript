@@ -4,27 +4,14 @@ import { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { api } from "@/services/api";
+import type { Booking } from "@/types";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
+  PieChart, Pie, Cell, AreaChart, Area,
 } from "recharts";
 
 const COLORS = ["#6366f1", "#8b5cf6", "#a78bfa", "#c4b5fd"];
-
-const monthlyData = [
-  { month: "Jan", bookings: 45, revenue: 28500 },
-  { month: "Feb", bookings: 52, revenue: 32400 },
-  { month: "Mar", bookings: 68, revenue: 41200 },
-  { month: "Apr", bookings: 74, revenue: 45800 },
-  { month: "May", bookings: 89, revenue: 52300 },
-  { month: "Jun", bookings: 105, revenue: 61200 },
-  { month: "Jul", bookings: 120, revenue: 72500 },
-  { month: "Aug", bookings: 115, revenue: 69800 },
-  { month: "Sep", bookings: 95, revenue: 58400 },
-  { month: "Oct", bookings: 82, revenue: 51000 },
-  { month: "Nov", bookings: 60, revenue: 37800 },
-  { month: "Dec", bookings: 78, revenue: 48200 },
-];
 
 const categoryData = [
   { name: "Villa", value: 35 },
@@ -33,18 +20,56 @@ const categoryData = [
   { name: "Resort", value: 20 },
 ];
 
-const recentActivity = [
-  { action: "New booking", property: "Luxury Beachfront Villa", user: "Sarah M.", amount: "$850", date: "2 hours ago" },
-  { action: "New review", property: "Mountain Retreat Cabin", user: "Emily R.", amount: "★★★★★", date: "5 hours ago" },
-  { action: "New booking", property: "Santorini Cliff Suite", user: "Sophia L.", amount: "$950", date: "1 day ago" },
-  { action: "Property listed", property: "Wine Country Estate", user: "Admin", amount: "$1,500", date: "2 days ago" },
-  { action: "New booking", property: "Modern City Apartment", user: "Michael T.", amount: "$450", date: "3 days ago" },
-];
-
 export default function DashboardPage() {
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const [selectedChart, setSelectedChart] = useState<"bar" | "pie" | "line">("bar");
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [stats, setStats] = useState({ totalBookings: 0, confirmedBookings: 0, totalRevenue: 0 });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    const fetchData = async () => {
+      try {
+        const [bookingsData, statsData] = await Promise.all([
+          api.getMyBookings(),
+          api.getBookingStats(),
+        ]);
+        setBookings(bookingsData.bookings);
+        setStats(statsData);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchData();
+  }, [session]);
+
+  // Build monthly booking chart data from real bookings
+  const monthlyBookings = (() => {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const counts = new Array(12).fill(0);
+    const revenue = new Array(12).fill(0);
+    bookings.forEach((b) => {
+      const date = new Date(b.createdAt);
+      const m = date.getMonth();
+      counts[m]++;
+      revenue[m] += b.totalPrice;
+    });
+    return months.map((month, i) => ({
+      month,
+      bookings: counts[i],
+      revenue: revenue[i],
+    }));
+  })();
+
+  const hasData = monthlyBookings.some((m) => m.bookings > 0);
+  const chartData = hasData ? monthlyBookings : [
+    { month: "Jan", bookings: 0, revenue: 0 },
+    { month: "Feb", bookings: 0, revenue: 0 },
+  ];
 
   useEffect(() => {
     if (!session?.user) {
@@ -66,24 +91,24 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Real Data */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: "Total Properties", value: "89", change: "+12%", icon: "M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21" },
-            { label: "Total Bookings", value: "983", change: "+8.2%", icon: "M9 12.75L11.25 15 15 9.75M3 12c0 1.268.63 2.39 1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12" },
-            { label: "Total Users", value: "1,247", change: "+5.4%", icon: "M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" },
-            { label: "Revenue", value: "$584K", change: "+18.3%", icon: "M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">{stat.label}</span>
-                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full dark:bg-emerald-950/30 dark:text-emerald-400">
-                  {stat.change}
-                </span>
-              </div>
-              <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">{stat.value}</p>
-            </div>
-          ))}
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">My Bookings</span>
+            <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">{loadingStats ? "..." : bookings.length}</p>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">Total Bookings</span>
+            <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">{loadingStats ? "..." : stats.totalBookings}</p>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">Total Revenue</span>
+            <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">{loadingStats ? "..." : `$${stats.totalRevenue.toLocaleString()}`}</p>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <span className="text-sm text-zinc-500 dark:text-zinc-400">Confirmed</span>
+            <p className="mt-2 text-2xl font-bold text-zinc-900 dark:text-zinc-50">{loadingStats ? "..." : stats.confirmedBookings}</p>
+          </div>
         </div>
 
         {/* Chart Selector & Charts */}
@@ -110,7 +135,7 @@ export default function DashboardPage() {
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 {selectedChart === "bar" ? (
-                  <BarChart data={monthlyData}>
+                  <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
                     <YAxis stroke="#9ca3af" fontSize={12} />
@@ -118,7 +143,7 @@ export default function DashboardPage() {
                     <Bar dataKey="bookings" fill="#6366f1" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 ) : (
-                  <AreaChart data={monthlyData}>
+                  <AreaChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
                     <YAxis stroke="#9ca3af" fontSize={12} />
@@ -178,23 +203,21 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {recentActivity.map((activity, idx) => (
+                {bookings.length > 0 ? bookings.slice(0, 10).map((b, idx) => (
                   <tr key={idx} className="border-b border-zinc-50 dark:border-zinc-800/50 last:border-0">
                     <td className="py-3 px-2">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                        activity.action === "New booking" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400" :
-                        activity.action === "New review" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400" :
-                        "bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400"
-                      }`}>
-                        {activity.action}
-                      </span>
+                      <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
+                      Booking
+                    </span>
                     </td>
-                    <td className="py-3 px-2 text-zinc-700 dark:text-zinc-300">{activity.property}</td>
-                    <td className="py-3 px-2 text-zinc-500">{activity.user}</td>
-                    <td className="py-3 px-2 text-right font-medium text-zinc-900 dark:text-zinc-100">{activity.amount}</td>
-                    <td className="py-3 px-2 text-right text-zinc-400 text-xs">{activity.date}</td>
+                    <td className="py-3 px-2 text-zinc-700 dark:text-zinc-300">{b.propertyTitle}</td>
+                    <td className="py-3 px-2 text-zinc-500">{b.userName}</td>
+                    <td className="py-3 px-2 text-right font-medium text-zinc-900 dark:text-zinc-100">${b.totalPrice.toLocaleString()}</td>
+                    <td className="py-3 px-2 text-right text-zinc-400 text-xs">{new Date(b.createdAt).toLocaleDateString()}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr><td colSpan={5} className="py-8 text-center text-sm text-zinc-400">No bookings yet. Browse properties and make your first booking!</td></tr>
+                )}
               </tbody>
             </table>
           </div>

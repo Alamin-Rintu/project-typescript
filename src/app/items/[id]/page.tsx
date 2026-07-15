@@ -1,19 +1,60 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/services/api";
+import { authClient } from "@/lib/auth-client";
 import type { ItemDetailResponse } from "@/types";
 import { DetailSkeleton } from "@/components/SkeletonLoader";
 import ListingCard from "@/components/ListingCard";
+import toast from "react-hot-toast";
 
 export default function ItemDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
   const [data, setData] = useState<ItemDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [booking, setBooking] = useState(false);
+
+  const handleBook = async () => {
+    if (!session?.user) {
+      toast.error("Please sign in to book a property");
+      router.push("/signin");
+      return;
+    }
+    setBooking(true);
+    try {
+      const checkIn = (document.getElementById("checkIn") as HTMLInputElement).value;
+      const checkOut = (document.getElementById("checkOut") as HTMLInputElement).value;
+      const guestsEl = document.getElementById("guests") as HTMLInputElement;
+      const guests = guestsEl ? Number(guestsEl.value) : 1;
+      const nights = Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
+      const totalPrice = item ? item.price * Math.max(nights, 1) : 0;
+
+      const result = await api.createBooking({
+        propertyId: id as string,
+        propertyTitle: item?.title || "Property",
+        propertyImage: item?.images?.[0] || "",
+        propertyLocation: item?.location || "",
+        checkIn,
+        checkOut,
+        guests,
+        totalPrice,
+      });
+      toast.success("Booking confirmed! 🎉");
+      router.push("/dashboard");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Booking failed";
+      toast.error(message);
+      console.error("Booking error:", err);
+    } finally {
+      setBooking(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -153,9 +194,51 @@ export default function ItemDetailPage() {
               </p>
             </div>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
-              <button className="flex-1 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-500 hover:shadow-xl hover:-translate-y-0.5">
-                Book This Property
+            {/* Booking Dates */}
+            <div className="mt-8 grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Check In</label>
+                <input
+                  id="checkIn"
+                  type="date"
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100"
+                  defaultValue={new Date(Date.now() + 86400000).toISOString().split("T")[0]}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Check Out</label>
+                <input
+                  id="checkOut"
+                  type="date"
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100"
+                  defaultValue={new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0]}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Guests</label>
+                <input
+                  id="guests"
+                  type="number"
+                  min={1}
+                  defaultValue={2}
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100"
+                />
+              </div>
+              <div className="flex items-end">
+                <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+                  ${item.price}
+                  <span className="text-sm font-normal text-zinc-400">/night</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleBook}
+                disabled={booking}
+                className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {booking ? "Booking..." : "Book This Property"}
               </button>
               <button className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 px-6 py-3.5 text-sm font-semibold text-zinc-700 transition-all hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
