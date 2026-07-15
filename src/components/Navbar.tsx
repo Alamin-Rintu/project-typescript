@@ -5,12 +5,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
-const navLinks = [
+
+const publicLinks = [
   { label: "Home", href: "/" },
-  { label: "Features", href: "/features" },
-  { label: "Pricing", href: "/pricing" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Explore", href: "/explore" },
+  { label: "Our Story", href: "/about" },
+
+];
+
+const privateLinks = [
+  { label: "Host a Stay", href: "/add" },
+  { label: "Dashboard", href: "/dashboard" },
 ];
 
 export default function Navbar() {
@@ -21,12 +26,13 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Sign out handler
+  // Dynamic route determination based on authentication state
+  const activeNavLinks = user ? [...publicLinks, ...privateLinks] : publicLinks;
+
   const handleSignOut = async () => {
     await authClient.signOut();
   };
 
-  // Track scroll position to change background styling
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -35,12 +41,10 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu when shifting routes
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Lock background body scroll when mobile drawer is active
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden";
@@ -61,11 +65,11 @@ export default function Navbar() {
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-        {/* Logo */}
+        {/* Brand Logo - Wayfarer Aesthetic */}
         <Link href="/" className="group flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 transition-transform duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-indigo-500/25">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 transition-transform duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-indigo-500/25">
             <svg
-              className="h-4.5 w-4.5 text-white"
+              className="h-5 w-5 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -78,14 +82,19 @@ export default function Navbar() {
               />
             </svg>
           </div>
-          <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            TypeScript
-          </span>
+          <div className="flex flex-col">
+            <span className="text-md font-bold tracking-tight text-zinc-900 dark:text-zinc-50 leading-none">
+              Wayfarer
+            </span>
+            <span className="text-[10px] text-zinc-400 font-medium tracking-wider uppercase mt-0.5 hidden sm:block">
+              Boutique Market
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => {
+          {activeNavLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
@@ -99,7 +108,7 @@ export default function Navbar() {
               >
                 <span className="relative z-10">{link.label}</span>
                 {isActive && (
-                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+                  <span className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
                 )}
                 {!isActive && (
                   <span className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-200 hover:opacity-100">
@@ -118,7 +127,7 @@ export default function Navbar() {
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
                 Hi,{" "}
                 <strong className="font-semibold text-zinc-950 dark:text-zinc-50">
-                  {user.name || "User"}
+                  {user.name?.split(" ")[0] || "Explorer"}
                 </strong>
               </span>
               <button
@@ -208,7 +217,7 @@ export default function Navbar() {
       >
         <div className="flex items-center justify-between px-6 pt-6 pb-2">
           <span className="text-sm font-semibold text-zinc-500 dark:text-zinc-400">
-            Navigation
+            Wayfarer Directory
           </span>
           <button
             className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
@@ -233,7 +242,7 @@ export default function Navbar() {
 
         {/* Links List */}
         <div className="flex flex-col gap-1 px-4 pt-4">
-          {navLinks.map((link, index) => {
+          {activeNavLinks.map((link, index) => {
             const isActive = pathname === link.href;
             return (
               <Link
