@@ -48,9 +48,7 @@ export default function SignUpPage() {
     }
 
     if (data) {
-      router.push(
-        selectedRole === "admin" ? "/items/manage" : "/explore"
-      );
+      router.push(selectedRole === "admin" ? "/items/manage" : "/explore");
     }
   };
 
@@ -58,9 +56,7 @@ export default function SignUpPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-zinc-50 to-zinc-100 dark:from-zinc-900 dark:to-zinc-950 p-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 shadow-xl">
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold">
-            Create your account
-          </h2>
+          <h2 className="text-2xl font-bold">Create your account</h2>
 
           <p className="mt-1 text-sm text-zinc-500">
             Join Wayfarer to explore or manage boutique stays.
@@ -73,17 +69,12 @@ export default function SignUpPage() {
           </div>
         )}
 
-        <Form
-          className="flex flex-col gap-5"
-          onSubmit={onSubmit}
-        >
+        <Form className="flex flex-col gap-5" onSubmit={onSubmit}>
           <TextField
             isRequired
             name="name"
             validate={(value) =>
-              value.length < 3
-                ? "Name must be at least 3 characters."
-                : null
+              value.length < 3 ? "Name must be at least 3 characters." : null
             }
           >
             <Label>Full Name</Label>
@@ -121,8 +112,7 @@ export default function SignUpPage() {
               if (!/[A-Z]/.test(value))
                 return "Must contain one uppercase letter.";
 
-              if (!/\d/.test(value))
-                return "Must contain one number.";
+              if (!/\d/.test(value)) return "Must contain one number.";
 
               return null;
             }}
@@ -170,28 +160,17 @@ export default function SignUpPage() {
             </div>
           </div>
 
-          <Button
-            type="submit"
-            isDisabled={isSubmitting}
-            className="w-full"
-          >
+          <Button type="submit" isDisabled={isSubmitting} className="w-full">
             {isSubmitting ? "Creating Account..." : "Sign Up"}
           </Button>
 
-          <Button
-            type="reset"
-            variant="outline"
-            className="w-full"
-          >
+          <Button type="reset" variant="outline" className="w-full">
             Reset
           </Button>
 
           <p className="text-center text-sm">
             Already have an account?{" "}
-            <Link
-              href="/signin"
-              className="font-semibold text-indigo-600"
-            >
+            <Link href="/signin" className="font-semibold text-indigo-600">
               Sign In
             </Link>
           </p>
