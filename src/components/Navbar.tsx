@@ -18,6 +18,10 @@ const privateLinks = [
   { label: "Dashboard", href: "/dashboard" },
 ];
 
+const adminLinks = [
+  { label: "Manage Users", href: "/admin/users" },
+];
+
 export default function Navbar() {
   const { data: session } = authClient.useSession();
   const user = session?.user;
@@ -27,7 +31,13 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   // Dynamic route determination based on authentication state
-  const activeNavLinks = user ? [...publicLinks, ...privateLinks] : publicLinks;
+  const userRole = (user as any)?.role || (typeof window !== "undefined" ? localStorage.getItem("wayfarer_role") : null);
+  const isAdmin = userRole === "admin";
+  const activeNavLinks = user
+    ? isAdmin
+      ? [...publicLinks, ...privateLinks, ...adminLinks]
+      : [...publicLinks, ...privateLinks]
+    : publicLinks;
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -125,6 +135,11 @@ export default function Navbar() {
           {user ? (
             <div className="flex items-center gap-4">
               <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                {isAdmin && (
+                  <span className="mr-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400">
+                    ADMIN
+                  </span>
+                )}
                 Hi,{" "}
                 <strong className="font-semibold text-zinc-950 dark:text-zinc-50">
                   {user.name?.split(" ")[0] || "Explorer"}

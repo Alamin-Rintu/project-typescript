@@ -60,6 +60,48 @@ class ApiService {
     return this.request("/auth/profile");
   }
 
+  /**
+   * Ensures the user has a valid Express JWT token stored.
+   * The app uses dual auth: Better Auth (Next.js) for session + Express JWT for API calls.
+   * This syncs the Express JWT so admin API calls work.
+   */
+  async ensureExpressToken(user: { name?: string | null; email?: string | null; id?: string | null; role?: string | null }): Promise<boolean> {
+    if (!user?.email) return false;
+
+    const name = user.name || "Wayfarer User";
+    const email = user.email;
+    const password = email + "-wayfarer-2026";
+    const targetRole = user.role || "user";
+
+    // Check if existing token has the correct role
+    const existingToken = this.getToken();
+    const storedRole = localStorage.getItem("wayfarer_role");
+    if (existingToken && storedRole === targetRole) {
+      return true;
+    }
+
+    // Register is now idempotent — it creates new users or updates existing ones' roles
+    try {
+      const res = await this.register(name, email, password, targetRole);
+      localStorage.setItem("wayfarer_token", res.token);
+      localStorage.setItem("wayfarer_role", targetRole);
+      return true;
+    } catch {
+      // Fallback to login if register fails
+      try {
+        const log = await this.login(email, password);
+        localStorage.setItem("wayfarer_token", log.token);
+        if (log.user?.role) {
+          localStorage.setItem("wayfarer_role", log.user.role);
+        }
+        return true;
+      } catch {
+        console.error("Failed to sync Express auth for user:", email);
+        return false;
+      }
+    }
+  }
+
   // Items endpoints
   async getItems(params: FilterParams = {}): Promise<ItemsResponse> {
     const query = new URLSearchParams();
@@ -133,6 +175,41 @@ class ApiService {
     totalRevenue: number;
   }> {
     return this.request("/bookings/stats");
+  }
+
+  // Admin endpoints
+  async getAdminStats(): Promise<{
+    totalBookings: number;
+    confirmedBookings: number;
+    totalRevenue: number;
+    totalUsers: number;
+    totalItems: number;
+  }> {
+    return this.request("/admin/stats");
+  }
+
+  async getAllBookingsAdmin(page = 1, limit = 20): Promise<{
+    bookings: import("@/types").Booking[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    return this.request(`/admin/bookings?page=${page}&limit=${limit}`);
+  }
+
+  async getAllUsers(page = 1, limit = 50): Promise<{
+    users: Array<{
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      createdAt: string;
+    }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    return this.request(`/admin/users?page=${page}&limit=${limit}`);
   }
 }
 
