@@ -37,7 +37,7 @@ export default function ItemDetailPage() {
       const nights = Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000);
       const totalPrice = item ? item.price * Math.max(nights, 1) : 0;
 
-      const result = await api.createBooking({
+      await api.createBooking({
         propertyId: id as string,
         propertyTitle: item?.title || "Property",
         propertyImage: item?.images?.[0] || "",

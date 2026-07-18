@@ -122,10 +122,11 @@ class ApiService {
     const password = email + "-wayfarer-2026";
     const targetRole = user.role || "user";
 
-    // Check if existing token has the correct role
+    // Check if existing token has the correct role and matches the current user
     const existingToken = this.getToken();
     const storedRole = localStorage.getItem("wayfarer_role");
-    if (existingToken && storedRole === targetRole) {
+    const storedEmail = localStorage.getItem("wayfarer_email");
+    if (existingToken && storedRole === targetRole && storedEmail === email) {
       return true;
     }
 
@@ -134,6 +135,7 @@ class ApiService {
       const res = await this.register(name, email, password, targetRole);
       localStorage.setItem("wayfarer_token", res.token);
       localStorage.setItem("wayfarer_role", targetRole);
+      localStorage.setItem("wayfarer_email", email);
       return true;
     } catch {
       // Fallback to login if register fails
@@ -143,6 +145,7 @@ class ApiService {
         if (log.user?.role) {
           localStorage.setItem("wayfarer_role", log.user.role);
         }
+        localStorage.setItem("wayfarer_email", email);
         return true;
       } catch {
         console.error("Failed to sync Express auth for user:", email);

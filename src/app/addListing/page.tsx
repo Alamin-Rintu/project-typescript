@@ -14,24 +14,6 @@ export default function AddListingPage() {
   const { data: session } = authClient.useSession();
   const [loading, setLoading] = useState(false);
 
-  const ensureExpressToken = async (): Promise<boolean> => {
-    const existingToken = localStorage.getItem("wayfarer_token");
-    if (existingToken) return true;
-    if (!session?.user?.email) return false;
-    try {
-      const password = session.user.id || "wayfarer-default-pass";
-      const reg = await api.register(session.user.name || "Wayfarer User", session.user.email, password);
-      localStorage.setItem("wayfarer_token", reg.token);
-      return true;
-    } catch {
-      try {
-        const log = await api.login(session.user.email, session.user.id || "wayfarer-default-pass");
-        localStorage.setItem("wayfarer_token", log.token);
-        return true;
-      } catch { return false; }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -41,7 +23,7 @@ export default function AddListingPage() {
       return;
     }
     setLoading(true);
-    const hasToken = await ensureExpressToken();
+    const hasToken = await api.ensureExpressToken(session.user);
     if (!hasToken) {
       toast.error("Authentication failed. Try signing in again.");
       setLoading(false);

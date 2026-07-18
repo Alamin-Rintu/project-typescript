@@ -43,7 +43,7 @@ export default function ManageItemsPage() {
     try {
       await api.deleteItem(id);
       setItems((prev) => prev.filter((item) => item._id !== id));
-    } catch (err) {
+    } catch {
       alert("Failed to delete item");
     } finally {
       setDeleting(null);

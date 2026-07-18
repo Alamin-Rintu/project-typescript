@@ -41,6 +41,9 @@ export default function Navbar() {
 
   const handleSignOut = async () => {
     await authClient.signOut();
+    localStorage.removeItem("wayfarer_token");
+    localStorage.removeItem("wayfarer_role");
+    localStorage.removeItem("wayfarer_email");
   };
 
   useEffect(() => {
