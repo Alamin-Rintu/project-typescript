@@ -68,6 +68,9 @@ export default function Navbar() {
     };
   }, [mobileOpen]);
 
+  const isHomepage = pathname === "/";
+  const useLightText = isHomepage && !scrolled;
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -95,10 +98,10 @@ export default function Navbar() {
             </svg>
           </div>
           <div className="flex flex-col">
-            <span className="text-md font-bold tracking-tight text-zinc-900 dark:text-zinc-50 leading-none">
+            <span className={`text-md font-bold tracking-tight ${useLightText ? "text-white" : "text-zinc-900 dark:text-zinc-50"} leading-none`}>
               Wayfarer
             </span>
-            <span className="text-[10px] text-zinc-400 font-medium tracking-wider uppercase mt-0.5 hidden sm:block">
+            <span className={`text-[10px] ${useLightText ? "text-white/60" : "text-zinc-400"} font-medium tracking-wider uppercase mt-0.5 hidden sm:block`}>
               Boutique Market
             </span>
           </div>
@@ -113,18 +116,26 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                  isActive
-                    ? "text-indigo-600 dark:text-indigo-400"
-                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  useLightText
+                    ? isActive
+                      ? "text-white font-semibold"
+                      : "text-white/80 hover:text-white"
+                    : isActive
+                      ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+                      : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
               >
                 <span className="relative z-10">{link.label}</span>
                 {isActive && (
-                  <span className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+                  <span className={`absolute inset-x-4 bottom-0 h-0.5 rounded-full ${
+                    useLightText ? "bg-white" : "bg-indigo-600 dark:bg-indigo-400"
+                  }`} />
                 )}
                 {!isActive && (
                   <span className="absolute inset-0 rounded-lg opacity-0 transition-opacity duration-200 hover:opacity-100">
-                    <span className="absolute inset-1 rounded-md bg-zinc-100 dark:bg-zinc-800" />
+                    <span className={`absolute inset-1 rounded-md ${
+                      useLightText ? "bg-white/10" : "bg-zinc-100 dark:bg-zinc-800"
+                    }`} />
                   </span>
                 )}
               </Link>
@@ -135,21 +146,32 @@ export default function Navbar() {
         {/* Desktop Auth Section */}
         <div className="hidden items-center gap-3 md:flex">
           {user ? (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                {isAdmin && (
-                  <span className="mr-2 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400">
-                    ADMIN
+            <div className="flex items-center gap-5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8.5 w-8.5 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-[11px] font-bold text-white shadow-md ring-2 ring-indigo-500/20">
+                  {user.name ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "EX"}
+                </div>
+                <div className="flex flex-col">
+                  <span className={`text-[10px] ${useLightText ? "text-white/60" : "text-zinc-500 dark:text-zinc-400"} font-semibold uppercase tracking-wider leading-none`}>
+                    Welcome
                   </span>
-                )}
-                Hi,{" "}
-                <strong className="font-semibold text-zinc-950 dark:text-zinc-50">
-                  {user.name?.split(" ")[0] || "Explorer"}
-                </strong>
-              </span>
+                  <span className={`text-sm font-bold ${useLightText ? "text-white" : "text-zinc-950 dark:text-zinc-50"} leading-none mt-0.5`}>
+                    {user.name?.split(" ")[0] || "Explorer"}
+                  </span>
+                </div>
+              </div>
+              {isAdmin && (
+                <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[9px] font-bold text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400">
+                  ADMIN
+                </span>
+              )}
               <button
                 onClick={handleSignOut}
-                className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-all duration-200 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className={`rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  useLightText
+                    ? "border-white/20 bg-white/10 text-white hover:bg-white/20 hover:scale-102"
+                    : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 hover:scale-102"
+                }`}
               >
                 Sign out
               </button>
@@ -158,7 +180,11 @@ export default function Navbar() {
             <>
               <Link
                 href="/signin"
-                className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-700 transition-all duration-200 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  useLightText
+                    ? "text-white/95 hover:bg-white/10 hover:text-white"
+                    : "text-zinc-750 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                }`}
               >
                 Sign in
               </Link>
@@ -188,7 +214,11 @@ export default function Navbar() {
 
         {/* Mobile Menu Toggle Button */}
         <button
-          className="relative flex h-10 w-10 items-center justify-center rounded-lg text-zinc-700 transition-colors duration-200 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800 md:hidden"
+          className={`relative flex h-10 w-10 items-center justify-center rounded-lg transition-colors duration-200 md:hidden ${
+            useLightText
+              ? "text-white hover:bg-white/10"
+              : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          }`}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
