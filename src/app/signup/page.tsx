@@ -33,7 +33,17 @@ export default function SignUpPage() {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const { data, error } = await (authClient.signUp.email as any)({
+    const signUpEmail = authClient.signUp.email as unknown as (params: {
+      name: string;
+      email: string;
+      password: string;
+      role: "user" | "admin";
+    }) => Promise<{
+      data: { user: { id: string; name: string; email: string; role: string } } | null;
+      error: { message?: string } | null;
+    }>;
+
+    const { data, error } = await signUpEmail({
       name,
       email,
       password,

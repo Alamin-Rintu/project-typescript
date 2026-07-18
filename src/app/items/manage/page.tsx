@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
@@ -15,15 +15,7 @@ export default function ManageItemsPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "table">("table");
 
-  useEffect(() => {
-    if (!session?.user) {
-      router.push("/signin");
-      return;
-    }
-    fetchItems();
-  }, [session, router]);
-
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
       const result = await api.getMyItems();
@@ -33,7 +25,17 @@ export default function ManageItemsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!session?.user) {
+      router.push("/signin");
+      return;
+    }
+    Promise.resolve().then(() => {
+      fetchItems();
+    });
+  }, [session, router, fetchItems]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) return;

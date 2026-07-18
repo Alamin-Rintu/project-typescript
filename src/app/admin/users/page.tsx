@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -23,8 +23,21 @@ export default function AdminUsersPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [checkingRole, setCheckingRole] = useState(true);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await api.getAllUsers(page, 20);
+      setUsers(result.users);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page]);
 
   useEffect(() => {
     if (!session?.user) {
@@ -37,13 +50,12 @@ export default function AdminUsersPage() {
       await api.ensureExpressToken(session.user);
 
       // Check if user is admin
-      const sessionRole = (session.user as any).role;
+      const sessionRole = (session.user as { role?: string }).role;
       if (sessionRole) {
         if (sessionRole !== "admin") {
           router.push("/dashboard");
           return;
         }
-        setUserRole(sessionRole);
         fetchUsers();
         setCheckingRole(false);
         return;
@@ -56,7 +68,6 @@ export default function AdminUsersPage() {
           router.push("/dashboard");
           return;
         }
-        setUserRole(profile.user.role);
         localStorage.setItem("wayfarer_role", profile.user.role);
         fetchUsers();
       } catch {
@@ -65,28 +76,13 @@ export default function AdminUsersPage() {
           router.push("/dashboard");
           return;
         }
-        setUserRole(storedRole);
         fetchUsers();
       } finally {
         setCheckingRole(false);
       }
     };
     initAdmin();
-  }, [session, router, page]);
-
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const result = await api.getAllUsers(page, 20);
-      setUsers(result.users);
-      setTotalPages(result.totalPages);
-      setTotal(result.total);
-    } catch (err) {
-      console.error("Failed to fetch users:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [session, router, fetchUsers]);
 
   if (!session?.user || checkingRole) {
     return (

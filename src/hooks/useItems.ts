@@ -24,7 +24,9 @@ export function useItems(initialParams: FilterParams = {}) {
   }, [params]);
 
   useEffect(() => {
-    fetchItems();
+    Promise.resolve().then(() => {
+      fetchItems();
+    });
   }, [fetchItems]);
 
   const updateParams = useCallback((newParams: Partial<FilterParams>) => {
@@ -110,7 +112,9 @@ export function useMyItems() {
   }, []);
 
   useEffect(() => {
-    fetchMyItems();
+    Promise.resolve().then(() => {
+      fetchMyItems();
+    });
   }, [fetchMyItems]);
 
   const deleteItem = async (id: string) => {

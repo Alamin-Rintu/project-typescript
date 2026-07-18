@@ -654,9 +654,11 @@ export default function DashboardPage() {
     }
 
     // Try to get role from better-auth session first (if it has additionalFields)
-    const sessionRole = (session.user as any).role;
+    const sessionRole = (session.user as { role?: string }).role;
     if (sessionRole) {
-      setUserRole(sessionRole);
+      Promise.resolve().then(() => {
+        setUserRole(sessionRole);
+      });
       // Sync Express JWT token so API calls work (critical for admin)
       api.ensureExpressToken(session.user).finally(() => {
         setCheckingRole(false);

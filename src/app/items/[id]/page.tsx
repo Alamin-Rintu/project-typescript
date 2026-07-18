@@ -19,6 +19,8 @@ export default function ItemDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [booking, setBooking] = useState(false);
+  const [defaultCheckIn] = useState(() => new Date(Date.now() + 86400000).toISOString().split("T")[0]);
+  const [defaultCheckOut] = useState(() => new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0]);
 
   const handleBook = async () => {
     if (!session?.user) {
@@ -202,7 +204,7 @@ export default function ItemDetailPage() {
                   id="checkIn"
                   type="date"
                   className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100"
-                  defaultValue={new Date(Date.now() + 86400000).toISOString().split("T")[0]}
+                  defaultValue={defaultCheckIn}
                 />
               </div>
               <div>
@@ -211,7 +213,7 @@ export default function ItemDetailPage() {
                   id="checkOut"
                   type="date"
                   className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100"
-                  defaultValue={new Date(Date.now() + 86400000 * 3).toISOString().split("T")[0]}
+                  defaultValue={defaultCheckOut}
                 />
               </div>
               <div>

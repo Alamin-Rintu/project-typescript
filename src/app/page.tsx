@@ -1,4 +1,4 @@
-import Hero from "@/components/Hero";
+import Banner from "@/components/Banner";
 import FeaturedItems from "@/components/FeaturedItems";
 import Categories from "@/components/Categories";
 import WhyChooseUs from "@/components/WhyChooseUs";
@@ -12,7 +12,7 @@ import CTA from "@/components/CTA";
 export default function Home() {
   return (
     <>
-      <Hero />
+      <Banner />
       <FeaturedItems />
       <Categories />
       <WhyChooseUs />

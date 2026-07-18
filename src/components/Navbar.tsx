@@ -31,7 +31,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   // Dynamic route determination based on authentication state
-  const userRole = (user as any)?.role || (typeof window !== "undefined" ? localStorage.getItem("wayfarer_role") : null);
+  const userRole = (user as { role?: string })?.role || (typeof window !== "undefined" ? localStorage.getItem("wayfarer_role") : null);
   const isAdmin = userRole === "admin";
   const activeNavLinks = user
     ? isAdmin
@@ -52,7 +52,9 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    setMobileOpen(false);
+    Promise.resolve().then(() => {
+      setMobileOpen(false);
+    });
   }, [pathname]);
 
   useEffect(() => {
