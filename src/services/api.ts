@@ -1,4 +1,5 @@
 import type { ItemsResponse, ItemDetailResponse, AuthResponse, FilterParams, Item } from "@/types";
+import { authClient } from "@/lib/auth-client";
 
 const API_BASE = (() => {
   const url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -21,7 +22,23 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const token = this.getToken();
+    let token = this.getToken();
+
+    // Auto-sync token if missing and we have a client-side Better Auth session
+    if (!token && typeof window !== "undefined") {
+      try {
+        const sessionRes = await authClient.getSession();
+        if (sessionRes?.data?.user) {
+          const synced = await this.ensureExpressToken(sessionRes.data.user);
+          if (synced) {
+            token = this.getToken();
+          }
+        }
+      } catch (err) {
+        console.error("Auto-syncing Express token failed:", err);
+      }
+    }
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...((options.headers as Record<string, string>) || {}),
@@ -37,6 +54,35 @@ class ApiService {
     });
 
     if (!response.ok) {
+      // If unauthorized, attempt to re-sync/refresh token once and retry
+      if (response.status === 401 && typeof window !== "undefined") {
+        try {
+          const sessionRes = await authClient.getSession();
+          if (sessionRes?.data?.user) {
+            localStorage.removeItem("wayfarer_token");
+            const synced = await this.ensureExpressToken(sessionRes.data.user);
+            if (synced) {
+              const newToken = this.getToken();
+              if (newToken) {
+                const retryHeaders = {
+                  ...headers,
+                  "Authorization": `Bearer ${newToken}`,
+                };
+                const retryResponse = await fetch(`${this.baseUrl}${endpoint}`, {
+                  ...options,
+                  headers: retryHeaders,
+                });
+                if (retryResponse.ok) {
+                  return retryResponse.json();
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Token refresh retry failed:", err);
+        }
+      }
+
       const error = await response.json().catch(() => ({ message: "Request failed" }));
       throw new Error(error.message || `HTTP ${response.status}`);
     }

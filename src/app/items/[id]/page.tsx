@@ -121,6 +121,9 @@ export default function ItemDetailPage() {
                 src={images[selectedImage]}
                 alt={item.title}
                 className="h-full w-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800";
+                }}
               />
             </div>
             {images.length > 1 && (
@@ -135,7 +138,14 @@ export default function ItemDetailPage() {
                         : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-600"
                     }`}
                   >
-                    <img src={img} alt="" className="h-20 w-24 object-cover" />
+                    <img
+                      src={img}
+                      alt=""
+                      className="h-20 w-24 object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800";
+                      }}
+                    />
                   </button>
                 ))}
               </div>
