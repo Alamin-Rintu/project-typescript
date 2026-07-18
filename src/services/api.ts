@@ -1,6 +1,9 @@
 import type { ItemsResponse, ItemDetailResponse, AuthResponse, FilterParams, Item } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL as string
+const API_BASE = (() => {
+  const url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  return url.endsWith("/api") ? url : `${url}/api`;
+})();
 
 class ApiService {
   private baseUrl: string;
