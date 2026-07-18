@@ -177,6 +177,13 @@ class ApiService {
     return this.request("/bookings/stats");
   }
 
+  async updateBookingStatus(id: string, status: "confirmed" | "pending" | "cancelled"): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/bookings/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Admin endpoints
   async getAdminStats(): Promise<{
     totalBookings: number;
