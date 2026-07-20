@@ -134,6 +134,22 @@ export default function SignUpPage() {
             </p>
           </div>
 
+          {/* Quick Demo Access Hint */}
+          <div className="mb-6 rounded-xl border border-indigo-200/80 bg-indigo-50/60 p-3.5 text-xs text-indigo-900 dark:border-indigo-900/40 dark:bg-indigo-950/30 dark:text-indigo-200 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-[10px]">
+                🔑
+              </span>
+              <span>Looking to test without creating an account? Use <strong>Demo Credentials</strong>.</span>
+            </div>
+            <Link
+              href="/signin"
+              className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 font-bold text-white shadow-xs hover:bg-indigo-500 transition-colors"
+            >
+              Demo Login
+            </Link>
+          </div>
+
           {submitError && (
             <div className="mb-5 rounded-xl border border-red-200 bg-red-50/50 p-4 text-sm text-red-600 dark:border-red-950/20 dark:bg-red-950/20 dark:text-red-400 flex items-start gap-2.5">
               <svg className="h-5 w-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

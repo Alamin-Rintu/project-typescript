@@ -4,6 +4,9 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import DemoCredentials from "@/components/DemoCredentials";
+
+import { api } from "@/services/api";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -19,18 +22,56 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      const { data, error: signInError } = await authClient.signIn.email({
+      let { data, error: signInError } = await authClient.signIn.email({
         email,
         password,
         rememberMe: true,
       });
+
+      // Auto-provision demo account if for any reason it wasn't in Better Auth yet
+      if (signInError && (email === "demo@wayfarer.com" || email === "admin@wayfarer.com")) {
+        const isAdmin = email === "admin@wayfarer.com";
+        const name = isAdmin ? "Admin User" : "Demo User";
+        const role = isAdmin ? "admin" : "user";
+
+        const signUpFn = authClient.signUp.email as unknown as (params: {
+          name: string;
+          email: string;
+          password: string;
+          role: string;
+        }) => Promise<{
+          data: { user: { id: string; name: string; email: string; role: string } } | null;
+          error: { message?: string } | null;
+        }>;
+
+        const { data: signUpData, error: signUpErr } = await signUpFn({
+          name,
+          email,
+          password,
+          role,
+        });
+
+        if (!signUpErr && signUpData) {
+          const retryRes = await authClient.signIn.email({
+            email,
+            password,
+            rememberMe: true,
+          });
+          data = retryRes.data;
+          signInError = retryRes.error;
+        }
+      }
 
       if (signInError) {
         setError(signInError.message || "Invalid email or password");
         return;
       }
 
-      if (data) {
+      if (data?.user) {
+        const userRole = (data.user as { role?: string }).role;
+        await api.ensureExpressToken(data.user);
+        router.push(userRole === "admin" ? "/admin/users" : "/");
+      } else {
         router.push("/");
       }
     } catch {
@@ -40,17 +81,68 @@ export default function SignInPage() {
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleFillCredentials = (demoEmail: string, demoPass: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    setError(null);
+  };
+
+  const handleQuickLogin = async (demoEmail: string, demoPass: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPass);
     setLoading(true);
     setError(null);
+
     try {
-      const { error: signInError } = await authClient.signIn.email({
-        email: "demo@wayfarer.com",
-        password: "Demo@123",
+      let { data, error: signInError } = await authClient.signIn.email({
+        email: demoEmail,
+        password: demoPass,
         rememberMe: true,
       });
+
+      // Auto-provision demo account if missing in Better Auth
+      if (signInError) {
+        const isAdmin = demoEmail === "admin@wayfarer.com";
+        const name = isAdmin ? "Admin User" : "Demo User";
+        const role = isAdmin ? "admin" : "user";
+
+        const signUpFn = authClient.signUp.email as unknown as (params: {
+          name: string;
+          email: string;
+          password: string;
+          role: string;
+        }) => Promise<{
+          data: { user: { id: string; name: string; email: string; role: string } } | null;
+          error: { message?: string } | null;
+        }>;
+
+        const { data: signUpData, error: signUpErr } = await signUpFn({
+          name,
+          email: demoEmail,
+          password: demoPass,
+          role,
+        });
+
+        if (!signUpErr && signUpData) {
+          const retryRes = await authClient.signIn.email({
+            email: demoEmail,
+            password: demoPass,
+            rememberMe: true,
+          });
+          data = retryRes.data;
+          signInError = retryRes.error;
+        }
+      }
+
       if (signInError) {
         setError(signInError.message || "Demo login failed");
+        return;
+      }
+
+      if (data?.user) {
+        const userRole = (data.user as { role?: string }).role;
+        await api.ensureExpressToken(data.user);
+        router.push(userRole === "admin" ? "/admin/users" : "/");
       } else {
         router.push("/");
       }
@@ -73,8 +165,6 @@ export default function SignInPage() {
         {/* Gradients and overlays */}
         <div className="absolute inset-0 bg-gradient-to-tr from-zinc-950 via-zinc-950/60 to-zinc-900/35" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(99,102,241,0.15),transparent_50%)]" />
-
-
 
         {/* Branding Message & Testimonial */}
         <div className="absolute inset-x-12 bottom-20">
@@ -102,15 +192,22 @@ export default function SignInPage() {
 
       {/* Form Side-Panel */}
       <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-16 xl:px-24">
-
-
         <div className="mx-auto w-full max-w-md">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">Welcome Back</h2>
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
               Sign in to your account to manage stays and bookings.
             </p>
+          </div>
+
+          {/* Interactive Demo Credentials Card */}
+          <div className="mb-6">
+            <DemoCredentials
+              onFillCredentials={handleFillCredentials}
+              onQuickLogin={handleQuickLogin}
+              loading={loading}
+            />
           </div>
 
           {error && (
@@ -194,29 +291,6 @@ export default function SignInPage() {
             </button>
           </form>
 
-          {/* Quick Demo Access Bar */}
-          <div className="mt-6">
-            <div className="relative flex items-center justify-center py-2.5">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
-              </div>
-              <span className="relative bg-white dark:bg-zinc-950 px-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                Or Quick Access
-              </span>
-            </div>
-
-            <button
-              onClick={handleDemoLogin}
-              disabled={loading}
-              className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl border border-indigo-150 bg-indigo-50/50 hover:bg-indigo-50 px-6 py-3.5 text-sm font-bold text-indigo-600 transition-all duration-300 hover:scale-[1.01] active:scale-[0.99] dark:border-indigo-900/50 dark:bg-indigo-950/20 dark:text-indigo-400 dark:hover:bg-indigo-950/30 disabled:opacity-50"
-            >
-              <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-              </svg>
-              Sign In as Demo User
-            </button>
-          </div>
-
           <p className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
             Don&apos;t have an account yet?{" "}
             <Link
@@ -231,3 +305,4 @@ export default function SignInPage() {
     </div>
   );
 }
+
