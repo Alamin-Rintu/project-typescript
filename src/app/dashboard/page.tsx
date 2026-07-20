@@ -992,23 +992,13 @@ export default function DashboardPage() {
       return;
     }
 
-    const sessionRole = (session.user as { role?: string }).role;
-    if (sessionRole) {
-      Promise.resolve().then(() => {
-        setUserRole(sessionRole);
-      });
-      api.ensureExpressToken(session.user).finally(() => {
-        setCheckingRole(false);
-      });
-      return;
-    }
-
-    const fetchRole = async () => {
+    const syncUserAndRole = async () => {
       try {
-        await api.ensureExpressToken(session.user);
-        const profile = await api.getProfile();
-        setUserRole(profile.user.role);
-        localStorage.setItem("wayfarer_role", profile.user.role);
+        const rawRole = (session.user as { role?: string }).role;
+        const roleToUse = rawRole || (session.user.email === "admin@wayfarer.com" ? "admin" : "user");
+        await api.ensureExpressToken({ ...session.user, role: roleToUse });
+        setUserRole(roleToUse);
+        localStorage.setItem("wayfarer_role", roleToUse);
       } catch {
         const storedRole = localStorage.getItem("wayfarer_role");
         setUserRole(storedRole || "user");
@@ -1016,7 +1006,8 @@ export default function DashboardPage() {
         setCheckingRole(false);
       }
     };
-    fetchRole();
+
+    syncUserAndRole();
   }, [session, router]);
 
   if (!session?.user || checkingRole) {

@@ -68,9 +68,9 @@ export default function SignInPage() {
       }
 
       if (data?.user) {
-        const userRole = (data.user as { role?: string }).role;
-        await api.ensureExpressToken(data.user);
-        router.push(userRole === "admin" ? "/admin/users" : "/");
+        const userRole = (data.user as { role?: string }).role || (data.user.email === "admin@wayfarer.com" ? "admin" : "user");
+        await api.ensureExpressToken({ ...data.user, role: userRole });
+        router.push(userRole === "admin" ? "/admin/users" : "/dashboard");
       } else {
         router.push("/");
       }
@@ -140,9 +140,9 @@ export default function SignInPage() {
       }
 
       if (data?.user) {
-        const userRole = (data.user as { role?: string }).role;
-        await api.ensureExpressToken(data.user);
-        router.push(userRole === "admin" ? "/admin/users" : "/");
+        const userRole = (data.user as { role?: string }).role || (data.user.email === "admin@wayfarer.com" ? "admin" : "user");
+        await api.ensureExpressToken({ ...data.user, role: userRole });
+        router.push(userRole === "admin" ? "/admin/users" : "/dashboard");
       } else {
         router.push("/");
       }

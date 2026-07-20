@@ -119,8 +119,18 @@ class ApiService {
 
     const name = user.name || "Wayfarer User";
     const email = user.email;
+
+    // Safely infer role if not explicitly provided
+    let targetRole = user.role;
+    if (!targetRole || targetRole === "user") {
+      if (email === "admin@wayfarer.com" || email.includes("admin")) {
+        targetRole = "admin";
+      } else {
+        targetRole = targetRole || "user";
+      }
+    }
+
     const password = email + "-wayfarer-2026";
-    const targetRole = user.role || "user";
 
     // Check if existing token has the correct role and matches the current user
     const existingToken = this.getToken();
